@@ -28,13 +28,12 @@ These instructions will help you set up and run the WebSocket server on your loc
    1. Open your terminal and run the following command to clone the repository:
 
    ```bash
-   git clone https://github.com/username/your-repo.git
+   git clone https://github.com/vansh0007/gowebsocket-lib.git
    ```
-Replace username and your-repo with your GitHub username and repository name.
 
 2. Navigate to the Project Directory:
  ```
-cd your-repo
+cd gowebsocket-lib
 ```
 
 3. Install Dependencies:
