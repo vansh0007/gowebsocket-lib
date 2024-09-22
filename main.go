@@ -1,25 +1,73 @@
 package main
 
 import (
-  "fmt"
+	"gowebsocket-lib/websocket"
+	"log"
+	"net/http"
+	"time"
 )
 
-//TIP To run your code, right-click the code and select <b>Run</b>. Alternatively, click
-// the <icon src="AllIcons.Actions.Execute"/> icon in the gutter and select the <b>Run</b> menu item from here.
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
+	// Perform WebSocket upgrade
+	err := websocket.Upgrade(w, r)
+	if err != nil {
+		http.Error(w, "Could not upgrade", http.StatusBadRequest)
+		return
+	}
 
-func main() {
-  //TIP Press <shortcut actionId="ShowIntentionActions"/> when your caret is at the underlined or highlighted text
-  // to see how GoLand suggests fixing it.
-  s := "gopher"
-  fmt.Println("Hello and welcome, %s!", s)
+	// Hijack the connection
+	hijacker, ok := w.(http.Hijacker)
+	if !ok {
+		http.Error(w, "Hijacking not supported", http.StatusInternalServerError)
+		return
+	}
 
-  for i := 1; i <= 5; i++ {
-	//TIP You can try debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-	// for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>. To start your debugging session, 
-	// right-click your code in the editor and select the <b>Debug</b> option. 
-	fmt.Println("i =", 100/i)
-  }
+	conn, _, err := hijacker.Hijack() // Hijack() returns net.Conn, *bufio.ReadWriter, error
+	if err != nil {
+		log.Println("Error hijacking connection:", err)
+		return
+	}
+	defer conn.Close()
+
+	// Create a new WebSocket connection
+	wsConn := websocket.NewConn(conn)
+
+	// Start a goroutine to send periodic messages
+	ticker := time.NewTicker(5 * time.Second) // Change the duration as needed
+	defer ticker.Stop()
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				message := []byte("Periodic message from server")
+				if err := wsConn.WriteMessage(message); err != nil {
+					log.Println("Write error:", err)
+					return
+				}
+			}
+		}
+	}()
+
+	// Handle WebSocket communication
+	for {
+		msg, err := wsConn.ReadMessage()
+		if err != nil {
+			log.Println("Read error:", err)
+			return
+		}
+
+		log.Println("Received message:", string(msg))
+
+		// Echo message back
+		if err := wsConn.WriteMessage(msg); err != nil {
+			log.Println("Write error:", err)
+			return
+		}
+	}
 }
 
-//TIP See GoLand help at <a href="https://www.jetbrains.com/help/go/">jetbrains.com/help/go/</a>.
-// Also, you can try interactive lessons for GoLand by selecting 'Help | Learn IDE Features' from the main menu.
+func main() {
+	http.HandleFunc("/ws", handleWebSocket)
+	log.Fatal(http.ListenAndServe(":8080", nil))
+}
