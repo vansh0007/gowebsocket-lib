@@ -9,7 +9,7 @@ import (
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Perform WebSocket upgrade
-	err := websocket.Upgrade(w, r)
+	err := websocket.Upgrade(w, r, []string{"chat", "binary", "json"})
 	if err != nil {
 		http.Error(w, "Could not upgrade", http.StatusBadRequest)
 		return
