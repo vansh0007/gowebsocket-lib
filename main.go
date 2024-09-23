@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gowebsocket-lib/logger"
 	"gowebsocket-lib/websocket"
 	"log"
 	"net/http"
@@ -58,9 +59,11 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 		if messageType == "binary" {
 			log.Println("Received message:", msg)
+			logger.Log.Println("Received binary message: ", msg)
 
 		} else {
 			log.Println("Received message:", string(msg))
+			logger.Log.Println("Received binary message: ", string(msg))
 		}
 
 		// Echo message back
@@ -74,4 +77,5 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/ws", handleWebSocket)
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
