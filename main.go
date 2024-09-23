@@ -51,13 +51,17 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Handle WebSocket communication
 	for {
-		msg, err := wsConn.ReadMessage()
+		messageType, msg, err := wsConn.ReadMessage()
 		if err != nil {
 			log.Println("Read error:", err)
 			return
 		}
+		if messageType == "binary" {
+			log.Println("Received message:", msg)
 
-		log.Println("Received message:", string(msg))
+		} else {
+			log.Println("Received message:", string(msg))
+		}
 
 		// Echo message back
 		if err := wsConn.WriteMessage(msg); err != nil {
