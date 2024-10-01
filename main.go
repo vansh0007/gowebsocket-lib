@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gowebsocket-lib/logger"
 	"gowebsocket-lib/websocket"
 	"log"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	// Perform WebSocket upgrade
-	err := websocket.Upgrade(w, r)
+	err := websocket.Upgrade(w, r, []string{"chat", "binary", "json"})
 	if err != nil {
 		http.Error(w, "Could not upgrade", http.StatusBadRequest)
 		return
@@ -51,13 +52,19 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Handle WebSocket communication
 	for {
-		msg, err := wsConn.ReadMessage()
+		messageType, msg, err := wsConn.ReadMessage()
 		if err != nil {
 			log.Println("Read error:", err)
 			return
 		}
+		if messageType == "binary" {
+			log.Println("Received message:", msg)
+			logger.Log.Println("Received binary message: ", msg)
 
-		log.Println("Received message:", string(msg))
+		} else {
+			log.Println("Received message:", string(msg))
+			logger.Log.Println("Received binary message: ", string(msg))
+		}
 
 		// Echo message back
 		if err := wsConn.WriteMessage(msg); err != nil {
@@ -70,4 +77,5 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/ws", handleWebSocket)
 	log.Fatal(http.ListenAndServe(":8080", nil))
+
 }
